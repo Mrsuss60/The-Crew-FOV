@@ -211,7 +211,7 @@ static BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
         if (attr == INVALID_FILE_ATTRIBUTES) {
             MessageBoxA(
                 NULL,
-                "Make sure to press the camera mode button (C) at least once to activate the mod.\nA config file will be created in the same directory!\nCtrl + Numpad Plus/Minus to adjust the FOV",
+                "Make sure to press the camera mode button (C) at least once to activate the mod.\nA config file will be created in the same directory!\nCtrl + Numpad+/- to adjust the FOV\nOr Right Control / Right shift keys",
                 "The Crew FOV Mod Loaded (1st Time Only Message)",
                 MB_OK | MB_ICONINFORMATION | MB_TOPMOST
             );
