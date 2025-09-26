@@ -1,10 +1,9 @@
 #include "pch.h"
 
 
-float g_FOV = 1.30f;
 const float g_RenderMin = 0.01f;
 const float g_RenderMax = 20000.0f;
-const float g_CameraSpeed = 115.0f;
+const float g_CameraSpeed = 125.0f;
 
 HMODULE   g_gameModule = nullptr;
 uintptr_t g_baseAddress = 0;
@@ -28,16 +27,6 @@ std::vector<BYTE> g_mask = {
     0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,
     0xFF,0xFF
 };
-
-
-static std::string GetConfigPath() {
-    char exePath[MAX_PATH];
-    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
-    std::string path = exePath;
-    size_t pos = path.find_last_of("\\/");
-    if (pos != std::string::npos) path = path.substr(0, pos + 1);
-    return path + "TheCrewFOV.cfg";
-}
 
 static uintptr_t FindPattern() {
     MODULEINFO mi;
@@ -136,90 +125,58 @@ static void ApplyCameraSettings() {
 }
 
 
-static void SaveConfig() {
-    std::ofstream f(GetConfigPath());
-    if (!f.is_open()) return;
-    f << "# FOV can be set from 0.025 to 2.0\n";  
-    f << "FOV=" << g_FOV << "\n";
-}
-
-static void LoadConfig() {
-    std::ifstream f(GetConfigPath());
-    if (!f.is_open()) { SaveConfig(); return; }
-    std::string line;
-    while (std::getline(f, line)) {
-        if (line.empty() || line[0] == '#' || line[0] == '|') continue;  
-        size_t eq = line.find('=');
-        if (eq == std::string::npos) continue;
-        std::string key = line.substr(0, eq);
-        float val = std::stof(line.substr(eq + 1));
-        if (key == "FOV") {
-            g_FOV = std::clamp(val, 0.025f, 2.0f);
-        }
-    }
-}
-
 static void Worker() {
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    while (!Initialize()) std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    DWORD attr = GetFileAttributesA(GetConfigPath().c_str());
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        MessageBoxA(
+            NULL,
+            "Make sure to press the camera mode button (C) at least once to activate the mod.\n"
+            "A config file will be created in the same directory!\n"
+            "Default hotkeys are Right Control / Right Shift to adjust FOV",
+            "The Crew FOV Mod Loaded (1st Time Only Message)",
+            MB_OK | MB_ICONINFORMATION | MB_TOPMOST
+        );
+    }
+
     LoadConfig();
+    HasConfigChanged();
+
+    while (!Initialize())
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
     int counter = 0;
     while (true) {
-        if (UpdateCameraAddress()) {   
-            ApplyCameraSettings();     
-            if ((GetAsyncKeyState(VK_CONTROL) & 0x8000)) { 
-                if (GetAsyncKeyState(VK_ADD) & 0x8000) {
-                    g_FOV += 0.025f;
-                    if (g_FOV > 2.0f) g_FOV = 2.0f;
-                    SaveConfig();
-                }
-                if (GetAsyncKeyState(VK_SUBTRACT) & 0x8000) {
-                    g_FOV -= 0.025f;
-                    if (g_FOV < 0.025f) g_FOV = 0.025f;
-                    SaveConfig();
-                }
-            }
 
-            if (GetAsyncKeyState(VK_RSHIFT) & 0x8000) {
-                g_FOV += 0.025f;
-                if (g_FOV > 2.0f) g_FOV = 2.0f;
-                SaveConfig();
-            }
-            if (GetAsyncKeyState(VK_RCONTROL) & 0x8000) {
-                g_FOV -= 0.025f;
-                if (g_FOV < 0.025f) g_FOV = 0.025f;
-                SaveConfig();
-            }
-
-            if (++counter >= 50) {
-                LoadConfig();
-                counter = 0;
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (HasConfigChanged()) {
+            LoadConfig();
         }
+
+        if (UpdateCameraAddress()) {
+            ApplyCameraSettings();
+
+
+            if (GetAsyncKeyState(g_IncreaseKey) & 0x8000) {
+                g_FOV = std::clamp(g_FOV + g_Step, 0.0025f, 2.0f);
+                SaveConfig();
+            }
+            if (GetAsyncKeyState(g_DecreaseKey) & 0x8000) {
+                g_FOV = std::clamp(g_FOV - g_Step, 0.0025f, 2.0f);
+                SaveConfig();
+            }
+
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
+
 
 
 static BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
-        
-        DWORD attr = GetFileAttributesA(GetConfigPath().c_str());
-        if (attr == INVALID_FILE_ATTRIBUTES) {
-            MessageBoxA(
-                NULL,
-                "Make sure to press the camera mode button (C) at least once to activate the mod.\nA config file will be created in the same directory!\nCtrl + Numpad+/- to adjust the FOV\nOr Right Control / Right shift keys",
-                "The Crew FOV Mod Loaded (1st Time Only Message)",
-                MB_OK | MB_ICONINFORMATION | MB_TOPMOST
-            );
-        }
-
-        LoadConfig();
-
-
         std::thread(Worker).detach();
     }
     return TRUE;

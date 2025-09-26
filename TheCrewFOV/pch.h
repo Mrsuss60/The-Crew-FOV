@@ -17,5 +17,8 @@
 #include <windows.h>
 #include <vector>
 #include <algorithm>
+#include <sys/stat.h>
+
+#include "ConfigFile.h"
 
 #endif //PCH_H
