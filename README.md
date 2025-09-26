@@ -5,6 +5,5 @@
 > Place both TheCrewFOV.dll and umpdc.dll in the game directory where TheCrew.exe is located 
 
 - **Usage:** 
-> - In game you should press C (or the camera mode button) in order of the mod to activate 
-> - Hold Left Ctrl and press Numpad+/- to adjust the FOV 
-> - Or Press Right Ctrl or Right Shift too 
+> - In game you should press C (or the camera mode button) for the mod to activate 
+> - Default Hotkeys: Right Ctrl/Right Shift to adjust the FOV
