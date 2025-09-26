@@ -181,6 +181,17 @@ static void Worker() {
                 }
             }
 
+            if (GetAsyncKeyState(VK_RSHIFT) & 0x8000) {
+                g_FOV += 0.025f;
+                if (g_FOV > 2.0f) g_FOV = 2.0f;
+                SaveConfig();
+            }
+            if (GetAsyncKeyState(VK_RCONTROL) & 0x8000) {
+                g_FOV -= 0.025f;
+                if (g_FOV < 0.025f) g_FOV = 0.025f;
+                SaveConfig();
+            }
+
             if (++counter >= 50) {
                 LoadConfig();
                 counter = 0;
